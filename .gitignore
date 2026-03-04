@@ -1,0 +1,23 @@
+# Python-generated files
+__pycache__/
+*.py[oc]
+build/
+dist/
+wheels/
+*.egg-info
+
+# Entornos virtuales y gestores de entorno
+.direnv/
+.venv/
+
+# Variables de entorno y secretos (¡CRÍTICO!)
+.env
+
+# Archivos temporales de Python
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Archivos del sistema operativo (Opcional pero recomendado)
+.DS_Store
+Thumbs.db
