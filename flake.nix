@@ -21,21 +21,16 @@
         devShells.default = pkgs.mkShell {
           buildInputs = with pkgs; [
             python311
-            uv # El motor de paquetes ultra rápido
+            uv
             pkg-config
           ];
 
           shellHook = ''
-            # Crear el entorno virtual si no existe
             if [ ! -d ".venv" ]; then
               uv venv
             fi
 
-            # Activar el entorno virtual automáticamente
             source .venv/bin/activate
-
-            echo "--- ⚡ Entorno Odoo + UV Activado ---"
-            uv --version
           '';
         };
       }
