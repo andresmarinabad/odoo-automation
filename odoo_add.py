@@ -6,7 +6,7 @@ from datetime import datetime, timedelta
 import pytz
 from dotenv import load_dotenv
 
-# Cargar variables de entorno (ODOO_URL, ODOO_DB, ODOO_USER, ODOO_TOKEN)
+# Cargar variables de entorno
 load_dotenv()
 
 # ==========================================
@@ -19,31 +19,33 @@ MES = 3
 ZONA_HORARIA = pytz.timezone("Europe/Madrid")
 
 def calcular_horarios(fecha_base):
-    # 1. Entrada Mañana (08:00 - 09:00)
-    inicio_m = fecha_base.replace(hour=8, minute=0, second=0) + timedelta(minutes=random.randint(0, 60))
+    # 1. Entrada Mañana (08:00:00 - 09:00:00)
+    # Generamos de 0 a 3600 segundos aleatorios (1 hora)
+    segundos_inicio = random.randint(0, 3600)
+    inicio_m = fecha_base.replace(hour=8, minute=0, second=0) + timedelta(seconds=segundos_inicio)
     
-    # 2. Duración primer bloque (Máximo 5.5h para no pasar de 6h seguidas)
-    duracion_1 = random.randint(240, 330) 
-    salida_m = inicio_m + timedelta(minutes=duracion_1)
+    # 2. Duración primer bloque (Máximo 5.5h = 19800 seg, mínimo 4h = 14400 seg)
+    duracion_1_segundos = random.randint(14400, 19800)
+    salida_m = inicio_m + timedelta(seconds=duracion_1_segundos)
     
-    # Validar que no pase de las 15:00
+    # Validar que no pase de las 15:00:00
     limite_almuerzo = fecha_base.replace(hour=15, minute=0, second=0)
     if salida_m > limite_almuerzo:
         salida_m = limite_almuerzo
-        duracion_1 = int((salida_m - inicio_m).total_seconds() / 60)
+        duracion_1_segundos = int((salida_m - inicio_m).total_seconds())
 
-    # 3. Descanso (15 - 20 minutos)
-    descanso = random.randint(15, 20)
-    inicio_t = salida_m + timedelta(minutes=descanso)
+    # 3. Descanso (Entre 15 y 20 minutos -> de 900 a 1200 segundos)
+    descanso_segundos = random.randint(900, 1200)
+    inicio_t = salida_m + timedelta(seconds=descanso_segundos)
 
-    # 4. Segundo bloque para completar 8 horas (480 min exactos)
-    minutos_restantes = 480 - duracion_1
-    salida_t = inicio_t + timedelta(minutes=minutos_restantes)
+    # 4. Segundo bloque para completar 8 horas exactas (28.800 segundos)
+    segundos_restantes = 28800 - duracion_1_segundos
+    salida_t = inicio_t + timedelta(seconds=segundos_restantes)
 
-    # 5. Validación final de hora de salida (Máximo 17:30)
+    # 5. Validación final de hora de salida (Máximo 17:30:00)
     limite_maximo = fecha_base.replace(hour=17, minute=30, second=0)
     if salida_t > limite_maximo:
-        return calcular_horarios(fecha_base) # Reintentar si la combinación aleatoria se pasa
+        return calcular_horarios(fecha_base) # Reintentar si la combinación se pasa de hora
 
     return inicio_m, salida_m, inicio_t, salida_t
 
@@ -54,7 +56,6 @@ def a_utc_str(dt_naive):
     return dt_utc.strftime('%Y-%m-%d %H:%M:%S')
 
 def registrar_mes_completo():
-    # Parámetros de conexión desde .env
     url = os.getenv("ODOO_URL").strip("/")
     db = os.getenv("ODOO_DB")
     username = os.getenv("ODOO_USER")
@@ -70,8 +71,6 @@ def registrar_mes_completo():
             print("❌ Error: No se pudo autenticar. Revisa tus credenciales.")
             return
         
-        print(f"✅ Conectado con UID: {uid}")
-
         # Búsqueda automática del ID del Empleado
         emp_ids = models.execute_kw(db, uid, api_key, 'hr.employee', 'search', [[['user_id', '=', uid]]])
         if not emp_ids:
@@ -79,8 +78,8 @@ def registrar_mes_completo():
             return
         
         employee_id = emp_ids[0]
-        print(f"👤 Empleado detectado (ID: {employee_id})")
-        print(f"📅 Generando registros para {MES}/{AÑO}...\n")
+        print(f"✅ Conectado. Empleado detectado (ID: {employee_id})")
+        print(f"📅 Generando registros ultrarrealistas para {MES}/{AÑO}...\n")
 
         # Obtener los días del mes
         _, num_dias = calendar.monthrange(AÑO, MES)
@@ -104,15 +103,16 @@ def registrar_mes_completo():
 
             # Enviar a Odoo
             for turno in turnos:
-                res_id = models.execute_kw(db, uid, api_key, 'hr.attendance', 'create', [{
+                models.execute_kw(db, uid, api_key, 'hr.attendance', 'create', [{
                     'employee_id': employee_id,
                     'check_in': turno['check_in'],
                     'check_out': turno['check_out'],
                 }])
             
-            print(f"✔️ {fecha_actual.strftime('%d/%m/%Y')} registrado: {i_m.strftime('%H:%M')}->{s_m.strftime('%H:%M')} y {i_t.strftime('%H:%M')}->{s_t.strftime('%H:%M')}")
+            # Mostrar por consola las horas exactas creadas
+            print(f"✔️ {fecha_actual.strftime('%d/%m/%Y')} registrado: {i_m.strftime('%H:%M:%S')}->{s_m.strftime('%H:%M:%S')} y {i_t.strftime('%H:%M:%S')}->{s_t.strftime('%H:%M:%S')}")
 
-        print("\n🚀 ¡Mes completado con éxito!")
+        print("\n🚀 ¡Mes completado con éxito y con segundos aleatorios!")
 
     except Exception as e:
         print(f"💥 Ocurrió un error: {e}")

@@ -12,7 +12,7 @@ load_dotenv()
 # CONFIGURACIÓN DEL MES A BORRAR
 # ==========================================
 AÑO = 2026
-MES = 12
+MES = 3
 # ==========================================
 
 ZONA_HORARIA = pytz.timezone("Europe/Madrid")
