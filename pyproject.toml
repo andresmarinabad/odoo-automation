@@ -6,5 +6,6 @@ readme = "README.md"
 requires-python = ">=3.11"
 dependencies = [
     "python-dotenv>=1.2.2",
+    "pytx",
     "pytz>=2026.1.post1",
 ]
